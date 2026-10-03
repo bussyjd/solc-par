@@ -1,0 +1,9 @@
+#!/bin/sh
+# Put this in front of solc-par to see exactly what a tool sends to solc:
+#
+#   crytic-compile Token.sol --solc ./solc-trace   # logs: Token.sol --combined-json … (passthrough)
+#   crytic-compile dir --solc-standard-json --solc ./solc-trace   # logs: --standard-json --allow-paths …
+#
+# Each invocation appends its argument vector to solc-trace.log next to this script.
+echo "argv: $*" >> "$(dirname "$0")/solc-trace.log"
+exec "${SOLC_PAR:-solc-par}" "$@"

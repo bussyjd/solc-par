@@ -1,0 +1,5 @@
+/solc-par
+/solc-par.exe
+*.log
+bench/scratch/
+__pycache__/

@@ -1,0 +1,9 @@
+# Ape has no "custom compiler path" setting; ape-solidity asks py-solc-x for
+# $SOLCX_BINARY_PATH/solc-v<version> (default ~/.solcx). Put a wrapper named like
+# that in a directory and point SOLCX_BINARY_PATH at it, see solcx-bin/ and run.sh.
+name: my-project
+solidity:
+  version: 0.8.37
+  optimize: true
+  optimization_runs: 200
+  via_ir: true

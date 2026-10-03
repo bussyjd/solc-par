@@ -1,0 +1,20 @@
+# Foundry: the `solc` key accepts a path, and profiles let you keep the stock build as the
+# default. Validated on openzeppelin-contracts (forge 1.8.3, solc 0.8.37, via-IR):
+#
+#   SOLC_PAR_SOLC=~/.svm/0.8.37/solc-0.8.37 FOUNDRY_PROFILE=fast forge build
+#
+# Equivalent without touching foundry.toml:
+#
+#   FOUNDRY_SOLC=/path/to/solc-par forge build        # env form of the `solc` key
+#   forge build --use /path/to/solc-par               # one-off
+#
+# SOLC_PAR_SOLC has to be exported in the shell/CI step: foundry.toml cannot set env vars.
+
+[profile.default]
+solc = "0.8.37"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+
+[profile.fast]
+solc = "/path/to/solc-par"       # alias: solc_version = "/path/to/solc-par"
