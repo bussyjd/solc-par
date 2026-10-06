@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.1.0 — unreleased
+## 0.1.1 — 2026-10-06
+
+- `.gitattributes` keeps LF line endings on every platform, so the gofmt check passes
+  on Windows checkouts (CI only; no change to the binary).
+
+## 0.1.0 — 2026-10-06
 
 Initial public release.
 
