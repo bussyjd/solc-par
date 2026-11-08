@@ -506,3 +506,30 @@ func TestCostsPath(t *testing.T) {
 		t.Errorf("base-path forms differ: %q %q %q %q", a, b, c, costsPath(nil))
 	}
 }
+
+func TestDefaultJobs(t *testing.T) {
+	cpus := runtime.GOMAXPROCS(0)
+	dir := t.TempDir()
+	write := func(name, content string) string {
+		p := dir + "/" + name
+		if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	if got := defaultJobs(dir + "/missing"); got != cpus {
+		t.Errorf("missing = %d, want %d", got, cpus)
+	}
+	if got := defaultJobs(write("max", "max\n")); got != cpus {
+		t.Errorf("max = %d, want %d", got, cpus)
+	}
+	if got := defaultJobs(write("v1-unlim", "9223372036854771712\n")); got != cpus {
+		t.Errorf("v1 unlimited = %d, want %d", got, cpus)
+	}
+	if got := defaultJobs(write("2g", fmt.Sprintf("%d\n", 2<<30))); got != min(cpus, 2) {
+		t.Errorf("2 GiB = %d, want %d", got, min(cpus, 2))
+	}
+	if got := defaultJobs(write("512m", fmt.Sprintf("%d\n", 512<<20))); got != 1 {
+		t.Errorf("512 MiB = %d, want 1", got)
+	}
+}

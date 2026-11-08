@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2 — 2026-11-08
+
+- Default job count (`defaultJobs`) now also caps shard concurrency on Linux at 1 shard
+  per GiB of any cgroup memory limit (`/sys/fs/cgroup/memory.max`, cgroup v1
+  `memory.limit_in_bytes`), preventing cgroup OOM kills and stock fallbacks in
+  memory-capped containers such as `solc-bench-cli`'s default 8 GiB sandbox.
+- Added `solc-bench-cli` comparison benchmarks (`morpho-org/metamorpho-v1.1`,
+  `OpenZeppelin/openzeppelin-contracts`, `Uniswap/v4-core`) against Solar, Slang, solx,
+  oksolc and stock solc in `BENCHMARKS.md`.
+
 ## 0.1.1 — 2026-10-06
 
 - `.gitattributes` keeps LF line endings on every platform, so the gofmt check passes

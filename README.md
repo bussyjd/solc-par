@@ -58,7 +58,7 @@ speeds up the compiles forge actually runs.
 | Variable         | Meaning                                                                                  | Default                                  |
 |------------------|------------------------------------------------------------------------------------------|------------------------------------------|
 | `SOLC_PAR_SOLC`  | Path of the real `solc` binary. **Required.**                                            | —                                        |
-| `SOLC_PAR_JOBS`  | Number of shards / concurrent solc processes. `<= 1` disables sharding.                  | CPUs available to the process (affinity mask and, on Linux, the cgroup CPU quota) |
+| `SOLC_PAR_JOBS`  | Number of shards / concurrent solc processes. `<= 1` disables sharding.                  | CPUs available to the process (affinity mask and, on Linux, cgroup CPU quota and 1 shard per GiB of cgroup memory limit) |
 | `SOLC_PAR_COSTS` | File that remembers each source's generated-code size to balance the next run. `""` disables. | one file per project under the user cache dir (`~/Library/Caches/solc-par`, `~/.cache/solc-par`, `%LocalAppData%\solc-par`) |
 | `SOLC_PAR_DEBUG` | Any non-empty value: say on stderr why a compile fell back to stock solc.               | unset                                    |
 | `SOLC_PAR_CHILD` | Reserved: set by solc-par for the solc it runs; solc-par refuses to start when it is set. | unset                                    |

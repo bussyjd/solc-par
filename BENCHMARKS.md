@@ -58,6 +58,53 @@ suit different stages: oksolc for a fast dev loop where a 0.8.36 compiler is acc
 solc-par wherever the deployment pins a solc version and the bytecode must be exactly
 that solc's.
 
+## Comparison via `solc-bench-cli` (Solar, Slang, solx, oksolc, stock solc)
+
+Measured 2026-11-08 with [`PraneshASP/solc-bench-cli`](https://github.com/PraneshASP/solc-bench-cli)
+(Foundry 1.9.0, 12-CPU Linux container on Apple M4 Pro, 1 warm-up + 3 timed clean builds
+per compiler in randomised round-robin order, fixed fuzz seed):
+
+### `morpho-org/metamorpho-v1.1` (`335933e715fd`, 794 `.sol` files, `via_ir = true`, `cancun`)
+
+| compiler | median build | vs `solc-viair` | vs `solc-latest` | bytecode | gas/call | deploy gas | tests |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| `solc-viair` (repo `0.8.19` + `0.8.26`) | 58.72 s | baseline | 2.1× slower | baseline | baseline | baseline | 196/196 |
+| **`solc-par` (repo `0.8.19` + `0.8.26`)** | **10.29 s** | **5.7× faster** | 2.7× faster | **0.0%** | **0.0%** | **0.0%** | **196/196** |
+| `solc-latest` (`0.8.38`) | 27.86 s | 2.1× faster | baseline | 0.0% | −0.1% | 0.0% | 196/196 |
+| **`solc-par-latest` (`0.8.38`)** | **5.03 s** | **11.7× faster** | **5.5× faster** | **0.0%** | **0.0%** | **0.0%** | **196/196** |
+| `oksolc` (`0.2.4`, Solidity `0.8.36`) | 13.77 s | 4.3× faster | 2.0× faster | 0.0% | 0.0% | 0.0% | 196/196 |
+| `solx` (`0.1.8`, solc + LLVM) | 2.75 s | 21.4× faster | 10.1× faster | +12.9% | −8.0% | +12.3% | 196/196 |
+| `slang` (`v0.2.0`, Slang + LLVM) | 0.69 s | 84.5× faster | 40.1× faster | +11.3% | −8.8% | +10.7% | 196/196 |
+| `solar` (`0.3.0-dev`) | 0.32 s | 185.8× faster | 88.2× faster | −25.7% | −10.3% | −25.2% | 196/196 |
+
+### `OpenZeppelin/openzeppelin-contracts` (`efaa6f78ab1d`, 484 `.sol` files + 1 `.yul` file, `osaka`)
+
+| compiler | median build | vs `solc-legacy` | vs `solc-viair` | bytecode | status / notes |
+|---|--:|--:|--:|--:|---|
+| `solc-legacy` (`0.8.35`) | 9.13 s | baseline | 3.4× faster | baseline | ok |
+| **`solc-par` (`0.8.35` legacy)** | **2.07 s** | **4.4× faster** | 15.2× faster | **0.0%** | **ok (passes `.yul` unit to stock solc)** |
+| `solc-latest` (`0.8.38` legacy) | 7.50 s | 1.2× faster | 4.2× faster | 0.0% | ok |
+| **`solc-par-latest` (`0.8.38` legacy)** | **1.76 s** | **5.2× faster** | 17.8× faster | **0.0%** | **ok (4.3× faster than `solc-latest`)** |
+| `solc-viair` (`0.8.35` via-IR) | 31.41 s | 3.4× slower | baseline | −14.4% | ok |
+| **`solc-par-viair` (`0.8.35` via-IR)** | **5.20 s** | **1.8× faster** | **6.0× faster** | **0.0%** (vs via-IR) | **ok** |
+| `solar`, `slang`, `solx`, `oksolc` | failed | — | — | — | all four fail on the standalone `.yul` compilation unit |
+
+### `Uniswap/v4-core` (`bea7f6d1c11c`, 510 `.sol` files, `solc 0.8.26`, `via_ir = true`, `optimizer_runs = 44444444`, `cancun`)
+
+| compiler | median build | vs `solc-viair` | bytecode | gas/call | deploy gas | tests |
+|---|--:|--:|--:|--:|--:|--:|
+| `solc-viair` (`0.8.26`) | 136.45 s | baseline | baseline | baseline | baseline | 593/598 ¹ |
+| **`solc-par` (`0.8.26`, 8 jobs / 8 GiB cap)** | **26.58 s** | **5.1× faster** | **0.0%** | **0.0%** | **0.0%** | **593/598 ¹** |
+| **`solc-par` (`0.8.26`, 12 jobs / 16 GiB)** | **28.38 s** | **4.8× faster** | **0.0%** | **0.0%** | **0.0%** | **593/598 ¹** |
+| `oksolc` (`0.2.4`) | 20.28 s | 6.7× faster | 0.0% | 0.0% | 0.0% | 592/598 ² |
+| `solx` (`0.1.8`) | 5.61 s | 24.3× faster | −9.5% | −0.9% | −7.8% | 592/598 ² |
+| `slang` (`v0.2.0`) | 1.02 s | 133.1× faster | −16.2% | −1.4% | −14.3% | 593/598 ¹ |
+| `solar` (`0.3.0-dev`) | 0.44 s | 310.1× faster | −35.4% | −2.2% | −33.8% | 593/598 ¹ |
+| `solc-latest` (`0.8.38`) | failed | — | — | — | — | `solc 0.8.38` stack-too-deep regression at `runs = 44444444` |
+
+¹ The 5 failing tests in `solc-viair` and `solc-par` are `ffi` differential tests (`FOUNDRY_FFI=false` inside `solc-bench-cli`'s sandbox).
+² `solx` and `oksolc` additionally fail `TickMathTestTest::test_fuzz_getTickAtSqrtPrice_getSqrtPriceAtTick_relation(int24)`.
+
 ## solc version compatibility
 
 solc-par depends on three stable things: the standard-json shape (unchanged since solc

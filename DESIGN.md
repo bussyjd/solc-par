@@ -166,9 +166,13 @@ requires solc to do less work, not more cores.
 - SIGINT or SIGTERM kills every solc that solc-par started (a shard left behind would
   keep a core busy until it tried to write to the closed pipe) and solc-par exits with
   the shell's status for the signal, without writing to stdout.
-- The default job count is `runtime.GOMAXPROCS(0)`, which unlike `runtime.NumCPU`
-  honours a Linux cgroup CPU quota: a quota-limited container on a large host would
-  otherwise start one memory-hungry solc per host CPU for no speed-up.
+- The default job count (`defaultJobs()`) starts from `runtime.GOMAXPROCS(0)`, which
+  unlike `runtime.NumCPU` honours a Linux cgroup CPU quota, and caps it on Linux at one
+  shard per GiB of any cgroup memory limit (`/sys/fs/cgroup/memory.max` or cgroup v1
+  `memory.limit_in_bytes`). A memory-capped container on a many-core host (such as
+  `solc-bench-cli`'s default 8 GiB sandbox on a 12-core machine) would otherwise spawn
+  enough via-IR `solc` shards to trigger the cgroup OOM-killer and fall back to a single
+  stock `solc` run.
 
 ## 7. Relation to oksolc
 

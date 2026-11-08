@@ -88,7 +88,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 		return code
 	}
-	jobs := runtime.GOMAXPROCS(0) // unlike NumCPU, honours a cgroup CPU quota
+	jobs := defaultJobs("/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes")
 	if v := os.Getenv("SOLC_PAR_JOBS"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil {
@@ -177,6 +177,23 @@ func signalContext() (ctx context.Context, status func() int, stop func()) {
 	}
 	stop = func() { signal.Stop(sigs); close(sigs); cancel() }
 	return ctx, status, stop
+}
+
+// defaultJobs returns the CPUs available to the process, capped on Linux at one
+// shard per GiB of any cgroup memory limit so that a memory-limited container
+// does not OOM a shard and fall back to stock solc.
+func defaultJobs(cgroupFiles ...string) int {
+	n := runtime.GOMAXPROCS(0) // unlike NumCPU, honours a cgroup CPU quota
+	for _, f := range cgroupFiles {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			continue
+		}
+		if lim, err := strconv.ParseUint(strings.TrimSpace(string(b)), 10, 64); err == nil && lim > 0 && lim < 1<<60 {
+			return min(n, max(1, int(lim>>30)))
+		}
+	}
+	return n
 }
 
 // valueOptions are the solc options that take their value as the next argument.
